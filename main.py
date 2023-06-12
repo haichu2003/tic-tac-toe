@@ -211,6 +211,10 @@ class GUI:
         self.start_welcome_window()
 
     def start_welcome_window(self):
+        """
+        start the welcome window, which will be shown when the game is started or new player(s) is introduced
+        :return: None
+        """
         self.__welcome_window = Tk()
 
         Label(self.__welcome_window, text="Enter map size:").grid(row=0, column=0)
@@ -281,8 +285,8 @@ class GUI:
         self.__welcome_window.withdraw()
         if self.__map_size_input.get() != '':
             try:
-                map = int(self.__map_size_input.get())
-                self.__map = Map(map)
+                map_size = int(self.__map_size_input.get())
+                self.__map = Map(map_size)
             except ValueError:
                 print("Must be int")
         if self.__player1_input.get() != '':
@@ -334,6 +338,10 @@ class GUI:
                 self.__buttons[i][j].grid(row=i + 2, column=j)
 
     def start(self):
+        """
+        start the game
+        :return: None
+        """
         self.__welcome_window.mainloop()
 
     def quit(self):
