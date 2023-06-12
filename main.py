@@ -280,7 +280,11 @@ class GUI:
         # test
         self.__welcome_window.withdraw()
         if self.__map_size_input.get() != '':
-            self.__map = Map(int(self.__map_size_input.get()))
+            try:
+                map = int(self.__map_size_input.get())
+                self.__map = Map(map)
+            except ValueError:
+                print("Must be int")
         if self.__player1_input.get() != '':
             self.__p1.set_name(self.__player1_input.get())
         if self.__player1_input.get() != '':
@@ -436,7 +440,7 @@ def command_line_game():
 
 
 def main():
-    map1 = Map(6)
+    map1 = Map()
     p1 = Player('Player1', 'X')
     p2 = Player('Player2', 'O')
     gui = GUI(map1, p1, p2)
