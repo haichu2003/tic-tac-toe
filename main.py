@@ -1,3 +1,6 @@
+from tkinter import *
+
+
 class Player:
 
     def __init__(self, name, character):
@@ -21,6 +24,14 @@ class Player:
         :return: str, player's name
         """
         return self.__name
+
+    def set_name(self, name):
+        """
+        set the player's name
+        :param name: player's name
+        :return: None
+        """
+        self.__name = name
 
     def __str__(self):
         """
@@ -53,6 +64,12 @@ class Box:
         self.__is_ticked = player.get_character()
         return True
 
+    def reset(self):
+        """
+        reset the box to its original state
+        """
+        self.__is_ticked = ' '
+
     def __str__(self):
         """
         :return: str, format:
@@ -69,7 +86,7 @@ class Map:
         self.__map = [[Box() for i in range(self.__col)] for j in range(self.__row)]
 
     def tick(self, player, x, y):
-        return self.__map[x][y].tick(player)
+        return self.__map[y][x].tick(player)
 
     def get_map_size(self):
         """
@@ -77,6 +94,21 @@ class Map:
         :return: (since the map is a square) an int, the length of one row
         """
         return self.__row
+
+    def get_map(self):
+        """
+        function to get the __map
+        :return: self.__map
+        """
+        return self.__map
+
+    def reset(self):
+        """
+        reset the map to its original state
+        """
+        for i in range(self.__row):
+            for j in range(self.__col):
+                self.__map[i][j].reset()
 
     def get_horizontal(self):
         """
@@ -152,6 +184,146 @@ class Map:
         return to_return
 
 
+class GUI:
+    def __init__(self, game_map, p1, p2):
+        """
+        GUI constructor
+        :param game_map: a Map object, the map to be used
+        :param p1: player 1
+        :param p2: player 2
+        """
+        # "Welcome" window configuration
+        self.__welcome_window = None
+
+        self.__player1_input = None
+        self.__player2_input = None
+
+        self.__map = game_map
+        self.__buttons = [[0 for i in range(self.__map.get_map_size())] for j in range(self.__map.get_map_size())]
+        self.__turn_count = 0
+        self.__p1 = p1
+        self.__p2 = p2
+
+        self.__game_window = None
+        self.__text_box = None
+
+        self.start_welcome_window()
+
+    def start_welcome_window(self):
+        self.__welcome_window = Tk()
+
+        Label(self.__welcome_window, text="Enter player 1's name:").grid(row=0, column=0)
+        Label(self.__welcome_window, text="Enter player 2's name:").grid(row=1, column=0)
+
+        self.__player1_input = Entry(self.__welcome_window)
+        self.__player2_input = Entry(self.__welcome_window)
+
+        Button(self.__welcome_window, text="Start game", command=self.start_game_window).grid(row=3, column=0)
+        Button(self.__welcome_window, text="quit", command=self.quit).grid(row=3, column=1)
+
+        self.__player1_input.grid(row=0, column=1, columnspan=3)
+        self.__player2_input.grid(row=1, column=1, columnspan=3)
+
+        if self.__game_window is not None:
+            self.__game_window.withdraw()
+
+    def update_map(self, x, y):
+        """
+        function to update the game window
+        :param x: location of box
+        :param y: location of box
+        :return: None
+        """
+        if self.__turn_count % 2 == 0:
+            player = self.__p1
+            self.__text_box.configure(text=f"{self.__p2.get_name()}'s turn. ({self.__p2.get_character()})")
+        else:
+            player = self.__p2
+            self.__text_box.configure(text=f"{self.__p1.get_name()}'s turn. ({self.__p1.get_character()})")
+        valid_move = self.__map.tick(player, x, y)
+        check = False
+        print(self.__map)
+        if valid_move:
+            self.__turn_count += 1
+            self.__buttons[x][y].configure(text=player.get_character())
+        else:
+            self.__text_box.configure(text="Invalid move! Please choose again.")
+        for line in self.__map.get_horizontal():
+            temp, c = check_win(line, self.__map.get_map_size())
+            check ^= temp
+        for line in self.__map.get_vertical():
+            temp, c = check_win(line, self.__map.get_map_size())
+            check ^= temp
+        for line in self.__map.get_left_diagonal():
+            temp, c = check_win(line, self.__map.get_map_size())
+            check ^= temp
+        for line in self.__map.get_right_diagonal():
+            temp, c = check_win(line, self.__map.get_map_size())
+            check ^= temp
+        if check:
+            self.__text_box.configure(text=f"{player.get_name()} has won the match.")
+            self.reset()
+            self.__text_box.configure(text=f"{self.__p1.get_name()}'s turn. ({self.__p1.get_character()})")
+
+    def start_game_window(self):
+        """
+        start the game
+        :return: None
+        """
+        # test
+        self.__welcome_window.withdraw()
+        self.__p1.set_name(self.__player1_input.get())
+        self.__p2.set_name(self.__player2_input.get())
+
+        # game window configuration
+
+        self.__game_window = Toplevel(self.__welcome_window)
+        print(type(self.__game_window))
+        self.__text_box = Label(self.__game_window, text="Tic Tac Toe", font=("Helvetica", "10"))
+        self.__text_box.configure(text=f"{self.__p1.get_name()}'s turn. ({self.__p1.get_character()})")
+
+        self.reset()
+
+        self.__game_window.title("Tic Tac Toe")
+        self.__game_window.resizable(True, True)
+
+        # game window structure
+        self.__text_box.grid(row=0, column=0, columnspan=self.__map.get_map_size())
+        Button(self.__game_window, text="reset game", command=self.reset).grid(row=1, column=0, columnspan=2)
+        Button(self.__game_window, text="quit", command=self.quit).grid(row=1, column=2)
+        Button(self.__game_window, text="New player", command=self.start_welcome_window).grid(row=1, column=3, columnspan=2)
+#        for i in range(self.__map.get_map_size()):
+#            for j in range(self.__map.get_map_size()):
+#                self.__buttons[j][i] = Button(self.__game_window, height=1, width=3,
+#                                              font=("Helvetica", "20"),
+#                                              command=lambda x=j, y=i: self.update_map(x, y))
+#                self.__buttons[j][i].grid(row=i + 1, column=j)
+
+    def reset(self):
+        """
+        reset the map to its initial status
+        :return: None
+        """
+        self.__map.reset()
+        self.__turn_count = 0
+        for i in range(self.__map.get_map_size()):
+            for j in range(self.__map.get_map_size()):
+                self.__buttons[i][j] = Button(self.__game_window, height=1, width=3,
+                                              font=("Helvetica", "20"),
+                                              command=lambda x=i, y=j: self.update_map(x, y))
+                self.__buttons[i][j].grid(row=i + 2, column=j)
+
+    def start(self):
+        self.__welcome_window.mainloop()
+
+    def quit(self):
+        """
+        quit the game
+        :return: None
+        """
+        self.__welcome_window.quit()
+
+
 def check_win(lines, map_size):
     """
     function to check if there are 5 (or 3, if the map is small) consecutive ticks of the same player on the same line
@@ -162,20 +334,16 @@ def check_win(lines, map_size):
     temp = ''
     for line in lines:
         temp += str(line)
-#    temp = temp.strip()
-    if len(temp) < map_size:
-        return False, ""
-    else:
-        temp = temp.strip()
-        check = []
-        for i in range(len(temp)):
-            if len(check) > 0 and temp[i] != check[-1]:
-                check = []
-            check.append(temp[i])
-            if len(check) >= (3 if map_size <= 5 else 5):
-                return True, check[0]
-
-        return False, ""
+    #    temp = temp.strip()
+    temp = temp.strip()
+    check = []
+    for i in range(len(temp)):
+        if len(check) > 0 and temp[i] != check[-1]:
+            check = []
+        check.append(temp[i])
+        if len(check) >= (3 if map_size <= 5 else 5):
+            return True, check[0]
+    return False, ""
 
 
 def print_map(map1):
@@ -187,11 +355,10 @@ def print_map(map1):
     print(to_return)
 
 
-def main():
-    map1 = Map(3)
-    p1 = Player('Hai', 'x')
-    p2 = Player('Ha', 'o')
-
+def command_line_game():
+    map1 = Map(4)
+    p1 = Player('Hai', 'X')
+    p2 = Player('Ha', 'O')
     winner = ""
     break_condition = False
     turn_count = 0
@@ -207,7 +374,14 @@ def main():
             x, y = user_input.split()
         except ValueError:
             break
-        map1.tick(player, int(x), int(y))
+        check = map1.tick(player, int(x), int(y))
+        while not check:
+            user_input = input(f"{player.get_name()} box: ")
+            try:
+                x, y = user_input.split()
+            except ValueError:
+                break
+            check = map1.tick(player, int(x), int(y))
 
         # check if there is any winner
         for line in map1.get_horizontal():
@@ -245,5 +419,14 @@ def main():
         print("Tie")
 
 
+def main():
+    map1 = Map(6)
+    p1 = Player('Hai', 'X')
+    p2 = Player('Ha', 'O')
+    gui = GUI(map1, p1, p2)
+    gui.start()
+
+
 if __name__ == '__main__':
+    # command_line_game()
     main()
