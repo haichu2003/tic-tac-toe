@@ -193,6 +193,7 @@ class GUI:
         :param p2: player 2
         """
         # "Welcome" window configuration
+        self.__map_size_input = None
         self.__welcome_window = None
 
         self.__player1_input = None
@@ -212,17 +213,23 @@ class GUI:
     def start_welcome_window(self):
         self.__welcome_window = Tk()
 
-        Label(self.__welcome_window, text="Enter player 1's name:").grid(row=0, column=0)
-        Label(self.__welcome_window, text="Enter player 2's name:").grid(row=1, column=0)
+        Label(self.__welcome_window, text="Enter map size:").grid(row=0, column=0)
+        Label(self.__welcome_window, text="Enter player 1's name:").grid(row=1, column=0)
+        Label(self.__welcome_window, text="Enter player 2's name:").grid(row=2, column=0)
 
+        self.__map_size_input = Entry(self.__welcome_window)
         self.__player1_input = Entry(self.__welcome_window)
         self.__player2_input = Entry(self.__welcome_window)
 
-        Button(self.__welcome_window, text="Start game", command=self.start_game_window).grid(row=3, column=0)
-        Button(self.__welcome_window, text="quit", command=self.quit).grid(row=3, column=1)
+        menu_bar = Menu(self.__welcome_window)
+        menu_bar.add_command(label="Start game", command=self.start_game_window)
+        menu_bar.add_command(label="Quit", command=self.quit)
 
-        self.__player1_input.grid(row=0, column=1, columnspan=3)
-        self.__player2_input.grid(row=1, column=1, columnspan=3)
+        self.__map_size_input.grid(row=0, column=1, columnspan=3)
+        self.__player1_input.grid(row=1, column=1, columnspan=3)
+        self.__player2_input.grid(row=2, column=1, columnspan=3)
+
+        self.__welcome_window.config(menu=menu_bar)
 
         if self.__game_window is not None:
             self.__game_window.withdraw()
@@ -242,7 +249,7 @@ class GUI:
             self.__text_box.configure(text=f"{self.__p1.get_name()}'s turn. ({self.__p1.get_character()})")
         valid_move = self.__map.tick(player, x, y)
         check = False
-        print(self.__map)
+        # print(self.__map)
         if valid_move:
             self.__turn_count += 1
             self.__buttons[x][y].configure(text=player.get_character())
@@ -272,26 +279,35 @@ class GUI:
         """
         # test
         self.__welcome_window.withdraw()
-        self.__p1.set_name(self.__player1_input.get())
-        self.__p2.set_name(self.__player2_input.get())
+        if self.__map_size_input.get() != '':
+            self.__map = Map(int(self.__map_size_input.get()))
+        if self.__player1_input.get() != '':
+            self.__p1.set_name(self.__player1_input.get())
+        if self.__player1_input.get() != '':
+            self.__p2.set_name(self.__player2_input.get())
 
         # game window configuration
 
         self.__game_window = Toplevel(self.__welcome_window)
-        print(type(self.__game_window))
         self.__text_box = Label(self.__game_window, text="Tic Tac Toe", font=("Helvetica", "10"))
         self.__text_box.configure(text=f"{self.__p1.get_name()}'s turn. ({self.__p1.get_character()})")
 
         self.reset()
+
+        menu_bar = Menu(self.__game_window)
+        edit_menu = Menu(menu_bar, tearoff=0)
+        edit_menu.add_command(label="Reset game", command=self.reset)
+        edit_menu.add_command(label="Quit", command=self.quit)
+        edit_menu.add_command(label="New player", command=self.start_welcome_window)
+        menu_bar.add_cascade(label="Edit", menu=edit_menu)
+
+        self.__game_window.config(menu=menu_bar)
 
         self.__game_window.title("Tic Tac Toe")
         self.__game_window.resizable(True, True)
 
         # game window structure
         self.__text_box.grid(row=0, column=0, columnspan=self.__map.get_map_size())
-        Button(self.__game_window, text="reset game", command=self.reset).grid(row=1, column=0, columnspan=2)
-        Button(self.__game_window, text="quit", command=self.quit).grid(row=1, column=2)
-        Button(self.__game_window, text="New player", command=self.start_welcome_window).grid(row=1, column=3, columnspan=2)
 #        for i in range(self.__map.get_map_size()):
 #            for j in range(self.__map.get_map_size()):
 #                self.__buttons[j][i] = Button(self.__game_window, height=1, width=3,
@@ -421,8 +437,8 @@ def command_line_game():
 
 def main():
     map1 = Map(6)
-    p1 = Player('Hai', 'X')
-    p2 = Player('Ha', 'O')
+    p1 = Player('Player1', 'X')
+    p2 = Player('Player2', 'O')
     gui = GUI(map1, p1, p2)
     gui.start()
 
